@@ -414,60 +414,19 @@ miner_data calculateMiningData(mining_subscribe& mWorker, mining_job mJob){
 
 /* Convert a double value into a truncated string for displaying with its
  * associated suitable for Mega, Giga etc. Buf array needs to be long enough */
-void suffix_string(double val, char *buf, size_t bufsiz, int sigdigits)
+void suffix_string(double val, char *buf, size_t bufsiz, int sigdigits) 
 {
-	const double kilo = 1000;
-	const double mega = 1000000;
-	const double giga = 1000000000;
-	const double tera = 1000000000000;
-	const double peta = 1000000000000000;
-	const double exa  = 1000000000000000000;
-	// minimum diff value to display
-	const double min_diff = 0.001;
-    const byte maxNdigits = 2;
-	char suffix[2] = "";
-	bool decimal = true;
-	double dval;
-
-	if (val >= exa) {
-		val /= peta;
-		dval = val / kilo;
-		strcpy(suffix, "E");
-	} else if (val >= peta) {
-		val /= tera;
-		dval = val / kilo;
-		strcpy(suffix, "P");
-	} else if (val >= tera) {
-		val /= giga;
-		dval = val / kilo;
-		strcpy(suffix, "T");
-	} else if (val >= giga) {
-		val /= mega;
-		dval = val / kilo;
-		strcpy(suffix, "G");
-	} else if (val >= mega) {
-		val /= kilo;
-		dval = val / kilo;
-		strcpy(suffix, "M");
-	} else if (val >= kilo) {
-		dval = val / kilo;
-		strcpy(suffix, "K");
-	} else {
-		dval = val;
-		if (dval < min_diff)
-			dval = 0.0;
-	}
-
-	if (!sigdigits) {
-		if (decimal)
-			snprintf(buf, bufsiz, "%.3f%s", dval, suffix);
-		else
-			snprintf(buf, bufsiz, "%d%s", (unsigned int)dval, suffix);
-	} else {
-		/* Always show sigdigits + 1, padded on right with zeroes
-		 * followed by suffix */
-		int ndigits = sigdigits - 1 - (dval > 0.0 ? floor(log10(dval)) : 0);
-
-		snprintf(buf, bufsiz, "%*.*f%s", sigdigits + 1, ndigits, dval, suffix);
-	}
+    const double thresholds[] = {1e18, 1e15, 1e12, 1e9, 1e6, 1e3};
+    const char *suffixes[] = {"E", "P", "T", "G", "M", "K"};
+    const int num_suffixes = sizeof(thresholds) / sizeof(thresholds[2]);
+    double dval = val;
+    const char *suffix = "";
+    for (int i = 0; i < num_suffixes; i++) {
+        if (val >= thresholds[i]) {
+            dval = val / thresholds[i];
+            suffix = suffixes[i];
+            break;
+        }
+    }
+    snprintf(buf, bufsiz, "%.*f%s", sigdigits, dval, suffix);
 }
